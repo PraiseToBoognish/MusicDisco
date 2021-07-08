@@ -1,0 +1,47 @@
+import os.path
+from os import path
+import requests
+from bs4 import BeautifulSoup
+
+
+PATH = r"C:\Users\matts\Music\Library"
+artists = ([name for name in os.listdir(r"C:\Users\matts\Music\Library")])
+
+for artist in artists:
+    print('-'*50)
+    album_dir = str(PATH) + "\\" + artist
+    owned_albums = ([album for album in os.listdir(album_dir)])
+       
+    r = requests.get(f'https://musicbrainz.org/taglookup/index?tag-lookup.artist={artist}&tag-lookup.release=&tag-lookup.tracknum=&tag-lookup.track=&tag-lookup.duration=&tag-lookup.filename=')
+    soup = BeautifulSoup(r.text, features='lxml')
+    link_list = soup.find_all('td')
+    td_list = []
+    for band in link_list:
+        if band.text[0:len(artist)] == artist:
+            td_list.append(band)
+            thing_list = []
+            for link in td_list:
+                    thing = link.find_all('a', href=True)
+                    thing_list.append(thing)
+            
+            for tag in thing_list:
+                artist_dirs = []
+                for item in tag:
+                    artist_dir = (item['href'])
+                    if artist_dir not in artist_dirs:
+                        artist_dirs.append(artist_dir)
+            for entry in artist_dirs:
+                r1 = requests.get(f'https://musicbrainz.org{artist_dir}')
+                soup1 = BeautifulSoup(r1.text, features='lxml')
+                disco = soup1.find('table', {'role': 'table'})
+                albums = disco.find_all('bdi')
+                all_albums = []
+                for album in albums:
+                    if album.text != artist:
+                        all_albums.append(album.text)
+        
+                if list(set(all_albums) - set(owned_albums)) != list(set(all_albums)):
+                    needed_albums = list(set(all_albums) - set(owned_albums))
+                    print(artist)
+                    print(needed_albums)
+                    print('-'*50)
